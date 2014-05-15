@@ -211,7 +211,7 @@ function loadTLE(theURL) {
 $(document).ready(function() {
 
     // Load the latest satellite TLEs.
-	loadTLE('/data/tle/resource.txt');
+	loadTLE('data/tle/resource.txt');
 
     // Locate the map element.
     map = L.map('map');
