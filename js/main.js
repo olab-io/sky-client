@@ -27,7 +27,7 @@ function onLocationError(e) {
 function generateTrajectories() {
 
     for (name in satellites) {
-        
+
         var locations = new Array();
 
         // Get the next hour
@@ -36,24 +36,24 @@ function generateTrajectories() {
             var m = moment().utc().add('minute', i);
 
             // Calculate Greenwich Mean Sideareal Time for coordinate transforms.
-            var gmst = satellite.gstime_from_date(m.year(), 
-                                                  m.month(), 
-                                                  m.date(), 
-                                                  m.hour(), 
-                                                  m.minute(), 
+            var gmst = satellite.gstime_from_date(m.year(),
+                                                  m.month(),
+                                                  m.date(),
+                                                  m.hour(),
+                                                  m.minute(),
                                                   m.second());
 
-            var position_and_velocity = satellite.propagate(satellites[name]["satrec"], 
-                                                            m.year(), 
-                                                            m.month(), 
-                                                            m.date(), 
-                                                            m.hour(), 
-                                                            m.minute(), 
+            var position_and_velocity = satellite.propagate(satellites[name]["satrec"],
+                                                            m.year(),
+                                                            m.month(),
+                                                            m.date(),
+                                                            m.hour(),
+                                                            m.minute(),
                                                             m.second());
 
             var position_gd = satellite.eci_to_geodetic(position_and_velocity["position"], gmst);
 
-            locations.push(L.latLng(satellite.degrees_lat(position_gd["latitude"]), 
+            locations.push(L.latLng(satellite.degrees_lat(position_gd["latitude"]),
                                     satellite.degrees_long(position_gd["longitude"])));
 
         }
@@ -68,13 +68,17 @@ function generateTrajectories() {
 function updateSatellites() {
     var now = moment().utc();
 
-    // Calculate Greenwich Mean Sideareal Time for coordinate transforms.
-    var gmst = satellite.gstime_from_date(now.year(), 
-                                          now.month(), 
-                                          now.date(), 
-                                          now.hour(), 
-                                          now.minute(), 
-                                          now.second());
+    // Calculate Greenwich Mean Sidereal Time for coordinate transforms.
+    // var gmst = satellite.gstime_from_date(now.year(),
+    //                                       now.month(),
+    //                                       now.date(),
+    //                                       now.hour(),
+    //                                       now.minute(),
+    //                                       now.second());
+    //
+  var gmst  = 1.74976;
+
+    console.log(gmst);
 
     // var deg2rad = Math.PI / 180;
 
@@ -85,12 +89,12 @@ function updateSatellites() {
     // };
 
     for (name in satellites) {
-        var position_and_velocity = satellite.propagate(satellites[name]["satrec"], 
-                                                        now.year(), 
-                                                        now.month(), 
-                                                        now.date(), 
-                                                        now.hour(), 
-                                                        now.minute(), 
+        var position_and_velocity = satellite.propagate(satellites[name]["satrec"],
+                                                        now.year(),
+                                                        now.month(),
+                                                        now.date(),
+                                                        now.hour(),
+                                                        now.minute(),
                                                         now.second());
 
         // The position_velocity result is a key-value pair of ECI coordinates.
@@ -125,12 +129,26 @@ function updateSatellites() {
         var latitude  = position_gd["latitude"];
         var height    = position_gd["height"];
 
-        satellites[name]["latlng"] = L.latLng(satellite.degrees_lat(position_gd["latitude"]), 
+        satellites[name]["latlng"] = L.latLng(satellite.degrees_lat(position_gd["latitude"]),
                                               satellite.degrees_long(position_gd["longitude"]));
 
         satellites[name]["marker"].setLatLng(satellites[name]["latlng"]);
-        
-        // console.log(satellites[name].latlng);
+
+
+        // Create info html.
+        var html = "<dl>";
+            html += "<dt>Name</dt>";
+            html += "<dd>" + satellites[name].name + "</dd>";
+            html += "<dt>Latitude</dt>";
+            html += "<dd>" + satellite.degrees_lat(position_gd["latitude"]) + "</dd>";
+            html += "<dt>Longitude</dt>";
+            html += "<dd>" + satellite.degrees_long(position_gd["longitude"]) + "</dd>";
+            html += "<dt>Elevation</dt>";
+            html += "<dd>" + position_gd["height"] + "</dd>";
+
+
+        satellites[name]["popup"].setContent(html);
+
      }
 
      // Update the satellites.
@@ -143,7 +161,7 @@ function loadTLE(theURL) {
         dataType: 'text',
         url: theURL,
         timeout: 5000, // 5 second timeout
-        success: function(data, textStatus ) {
+        success: function(data, textStatus) {
             var lines = data.split('\n');
             var numLines = lines.length;
 
@@ -154,7 +172,7 @@ function loadTLE(theURL) {
             for (i = 0; i < numLines; i++) {
 
                 var line = lines[i];
-                
+
                 if (line.length == 0)
                 {
                     continue;
@@ -177,14 +195,19 @@ function loadTLE(theURL) {
 
                     // Create a maker and add it to the map.
                     var marker = new L.marker(home).addTo(map);
+                    var popup = new L.popup(marker);
 
-                    satellites[satrec.satnum] = { 
+                    marker.bindPopup(popup);
+
+                    satellites[satrec.satnum] = {
                         // If there is no name in the TLE, then use the NORARD catalog number.
                         name: currentName ? currentName : satrec.satnum,
                         // Save a copy of the extracted satelite record.
                         satrec: satrec,
                         // Save a marker
-                        marker: marker
+                        marker: marker,
+                        // Save a popup
+                        popup: popup
                     }
 
                     currentName = "";
@@ -231,10 +254,10 @@ $(document).ready(function() {
     // Center map on home.
     map.setView(home, 3)
 
-    // Setup success callback for location. 
+    // Setup success callback for location.
     map.on('locationfound', onLocationFound);
 
-    // Setup error callback for location. 
+    // Setup error callback for location.
     map.on('locationerror', onLocationError);
 
     // Initialize auto-location.
@@ -242,7 +265,7 @@ $(document).ready(function() {
         watch: false, // Continuously update the geolocation
         setView: true, // Reset the view when the location is discovered.
         timeout: 10000, // The location timeout before error.
-        maxZoom: 12, // Set the maximum zoom level.
+        maxZoom: 2, // Set the maximum zoom level.
         enableHighAccuracy: true // High accuracy hint (http://dev.w3.org/geo/api/spec-source.html#high-accuracy)
     });
 });
