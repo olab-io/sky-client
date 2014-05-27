@@ -37,7 +37,7 @@ function generateTrajectories() {
 
             // Calculate Greenwich Mean Sideareal Time for coordinate transforms.
             var gmst = satellite.gstime_from_date(m.year(),
-                                                  m.month(),
+                                                  m.month() + 1,
                                                   m.date(),
                                                   m.hour(),
                                                   m.minute(),
@@ -45,7 +45,7 @@ function generateTrajectories() {
 
             var position_and_velocity = satellite.propagate(satellites[name]["satrec"],
                                                             m.year(),
-                                                            m.month(),
+                                                            m.month() + 1,
                                                             m.date(),
                                                             m.hour(),
                                                             m.minute(),
@@ -68,17 +68,13 @@ function generateTrajectories() {
 function updateSatellites() {
     var now = moment().utc();
 
-    // Calculate Greenwich Mean Sidereal Time for coordinate transforms.
-    // var gmst = satellite.gstime_from_date(now.year(),
-    //                                       now.month(),
-    //                                       now.date(),
-    //                                       now.hour(),
-    //                                       now.minute(),
-    //                                       now.second());
-    //
-  var gmst  = 1.74976;
 
-    console.log(gmst);
+    var gmst = satellite.gstime_from_date(now.year(),
+                                          now.month() + 1,
+                                          now.date(),
+                                          now.hour(),
+                                          now.minute(),
+                                          now.second());
 
     // var deg2rad = Math.PI / 180;
 
@@ -91,7 +87,7 @@ function updateSatellites() {
     for (name in satellites) {
         var position_and_velocity = satellite.propagate(satellites[name]["satrec"],
                                                         now.year(),
-                                                        now.month(),
+                                                        now.month() + 1,
                                                         now.date(),
                                                         now.hour(),
                                                         now.minute(),
@@ -102,22 +98,21 @@ function updateSatellites() {
         var position_eci = position_and_velocity["position"];
         var velocity_eci = position_and_velocity["velocity"];
 
+
         // You can get ECF, Geodetic, Look Angles, and Doppler Factor.
         var position_ecf   = satellite.eci_to_ecf (position_eci, gmst);
-
         var velocity_ecf   = satellite.eci_to_ecf (velocity_eci, gmst);
 
-
         //var observer_ecf   = satellite.geodetic_to_ecf (observer_gd);
-        var position_gd    = satellite.eci_to_geodetic (position_eci, gmst);
+        var position_gd    = satellite.eci_to_geodetic(position_eci, gmst);
         //var look_angles    = satellite.ecf_to_look_angles (observer_gd, position_ecf);
         //var doppler_factor = satellite.doppler_factor (observer_coords_ecf, position_ecf, velocity_ecf);
 
         // The coordinates are all stored in key-value pairs.
         // ECI and ECF are accessed by "x", "y", "z".
-        var satellite_x = position_eci["x"];
-        var satellite_y = position_eci["y"];
-        var satellite_z = position_eci["z"];
+        // var satellite_x = position_eci["x"];
+        // var satellite_y = position_eci["y"];
+        // var satellite_z = position_eci["z"];
 
         // Look Angles may be accessed by "azimuth", "elevation", "range_sat".
         // var azimuth   = look_angles["azimuth"];
